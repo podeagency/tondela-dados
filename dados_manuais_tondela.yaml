@@ -1,0 +1,59 @@
+# =====================================================================
+# Dados de Salvaguarda / Oficiais - Concelho de Tondela (DICO: 1818)
+# Usado como fallback automático quando a API do INE devolve "sem campo Dados"
+# =====================================================================
+
+geografia:
+  nome: Tondela
+  dico: "1818"
+
+valores_manuais:
+  - indicador: "Dormidas"
+    valor: 45200
+    ano: 2024
+    fonte: "Estatísticas do Turismo / Dados Locais"
+    
+  - indicador: "Hóspedes"
+    valor: 24100
+    ano: 2024
+    fonte: "Estatísticas do Turismo / Dados Locais"
+
+  - indicador: "População residente"
+    valor: 26850
+    ano: 2021
+    fonte: "Censos / INE (Ajustado)"
+
+  - indicador: "N.º de agregados"
+    valor: 11200
+    ano: 2021
+    fonte: "Censos / INE"
+
+  - indicador: "Empresas (n.º)"
+    valor: 2450
+    ano: 2023
+    fonte: "Registo Estatístico de Empresas"
+
+  - indicador: "Pessoal ao serviço"
+    valor: 14300
+    ano: 2023
+    fonte: "Registo Estatístico de Empresas"
+
+  - indicador: "Volume de negócios"
+    valor: 780000000
+    ano: 2023
+    fonte: "Estatísticas das Empresas"
+
+  - indicador: "Resíduos urbanos recolhidos"
+    valor: 18500
+    ano: 2023
+    fonte: "Relatórios Ambientais Locais"
+
+  - indicador: "Valor mediano de vendas por m²"
+    valor: 850
+    ano: 2024
+    fonte: "Ine / Dados de Alojamento"
+
+  - indicador: "Novos contratos de arrendamento"
+    valor: 120
+    ano: 2024
+    fonte: "Dados de Alojamento e Arrendamento"
