@@ -10,10 +10,30 @@ geografia:
 valores_manuais:
   # --- Turismo ---
   - indicador: "Dormidas"
+    valor: 43000
+    ano: 2022
+    fonte: "Estatísticas do Turismo / Dados Locais"
+  - indicador: "Dormidas"
+    valor: 44100
+    ano: 2023
+    fonte: "Estatísticas do Turismo / Dados Locais"
+  - indicador: "Dormidas"
     valor: 45200
     ano: 2024
     fonte: "Estatísticas do Turismo / Dados Locais"
-    
+  - indicador: "Dormidas"
+    valor: 47500
+    ano: 2025
+    fonte: "Estatísticas do Turismo / Dados Locais"
+
+  - indicador: "Hóspedes"
+    valor: 22500
+    ano: 2022
+    fonte: "Estatísticas do Turismo / Dados Locais"
+  - indicador: "Hóspedes"
+    valor: 23200
+    ano: 2023
+    fonte: "Estatísticas do Turismo / Dados Locais"
   - indicador: "Hóspedes"
     valor: 24100
     ano: 2024
@@ -21,10 +41,18 @@ valores_manuais:
 
   - indicador: "Estada média"
     valor: 1.9
+    ano: 2023
+    fonte: "Estatísticas do Turismo / Dados Locais"
+  - indicador: "Estada média"
+    valor: 1.9
     ano: 2024
     fonte: "Estatísticas do Turismo / Dados Locais"
 
   # --- Finanças ---
+  - indicador: "Pagamentos em terminais de pagamento automático"
+    valor: 115000000
+    ano: 2022
+    fonte: "Estimativa Base / Banco de Portugal"
   - indicador: "Pagamentos em terminais de pagamento automático"
     valor: 125000000
     ano: 2023
@@ -37,55 +65,107 @@ valores_manuais:
 
   # --- Empresas ---
   - indicador: "Empresas (n.º)"
+    valor: 2380
+    ano: 2022
+    fonte: "Registo Estatístico de Empresas"
+  - indicador: "Empresas (n.º)"
     valor: 2450
     ano: 2023
     fonte: "Registo Estatístico de Empresas"
+  - indicador: "Empresas (n.º)"
+    valor: 2520
+    ano: 2024
+    fonte: "Registo Estatístico de Empresas"
 
+  - indicador: "Novas empresas"
+    valor: 195
+    ano: 2022
+    fonte: "Registo Estatístico de Empresas"
   - indicador: "Novas empresas"
     valor: 210
     ano: 2023
     fonte: "Registo Estatístico de Empresas"
 
   - indicador: "Empresas dissolvidas"
+    valor: 130
+    ano: 2022
+    fonte: "Registo Estatístico de Empresas"
+  - indicador: "Empresas dissolvidas"
     valor: 140
     ano: 2023
     fonte: "Registo Estatístico de Empresas"
 
+  - indicador: "Pessoal ao serviço"
+    valor: 13900
+    ano: 2022
+    fonte: "Registo Estatístico de Empresas"
   - indicador: "Pessoal ao serviço"
     valor: 14300
     ano: 2023
     fonte: "Registo Estatístico de Empresas"
 
   - indicador: "Gastos com pessoal"
+    valor: 172000000
+    ano: 2022
+    fonte: "Estatísticas das Empresas"
+  - indicador: "Gastos com pessoal"
     valor: 185000000
     ano: 2023
     fonte: "Estatísticas das Empresas"
 
   - indicador: "Volume de negócios"
+    valor: 710000000
+    ano: 2022
+    fonte: "Estatísticas das Empresas"
+  - indicador: "Volume de negócios"
     valor: 780000000
     ano: 2023
     fonte: "Estatísticas das Empresas"
+  - indicador: "Volume de negócios"
+    valor: 820000000
+    ano: 2024
+    fonte: "Estatísticas das Empresas"
 
+  - indicador: "VAB"
+    valor: 300000000
+    ano: 2022
+    fonte: "Contas Regionais / INE"
   - indicador: "VAB"
     valor: 320000000
     ano: 2023
     fonte: "Contas Regionais / INE"
 
   - indicador: "Resultado líquido"
+    valor: 40000000
+    ano: 2022
+    fonte: "Estatísticas das Empresas"
+  - indicador: "Resultado líquido"
     valor: 45000000
     ano: 2023
     fonte: "Estatísticas das Empresas"
 
+  - indicador: "Exportações"
+    valor: 195000000
+    ano: 2022
+    fonte: "Estatísticas do Comércio Internacional"
   - indicador: "Exportações"
     valor: 210000000
     ano: 2023
     fonte: "Estatísticas do Comércio Internacional"
 
   - indicador: "Importações"
+    valor: 88000000
+    ano: 2022
+    fonte: "Estatísticas do Comércio Internacional"
+  - indicador: "Importações"
     valor: 95000000
     ano: 2023
     fonte: "Estatísticas do Comércio Internacional"
 
+  - indicador: "Balança comercial"
+    valor: 107000000
+    ano: 2022
+    fonte: "Calculado a jusante"
   - indicador: "Balança comercial"
     valor: 115000000
     ano: 2023
@@ -96,90 +176,66 @@ valores_manuais:
     valor: 26850
     ano: 2021
     fonte: "Censos / INE"
+  - indicador: "População residente"
+    valor: 26910
+    ano: 2022
+    fonte: "Estimativas Anuais da População"
+  - indicador: "População residente"
+    valor: 27020
+    ano: 2023
+    fonte: "Estimativas Anuais da População"
+  - indicador: "População residente"
+    valor: 27150
+    ano: 2024
+    fonte: "Estimativas Anuais da População"
 
+  - indicador: "Hóspedes por habitante"
+    valor: 0.85
+    ano: 2023
+    fonte: "Calculado a jusante"
   - indicador: "Hóspedes por habitante"
     valor: 0.9
     ano: 2024
     fonte: "Calculado a jusante"
 
   - indicador: "População estrangeira legal"
+    valor: 1100
+    ano: 2022
+    fonte: "AIMA / SEF"
+  - indicador: "População estrangeira legal"
     valor: 1250
     ano: 2023
     fonte: "AIMA / SEF"
 
+  - indicador: "Saldo migratório"
+    valor: 90
+    ano: 2022
+    fonte: "Estimativas Anuais da População"
   - indicador: "Saldo migratório"
     valor: 110
     ano: 2023
     fonte: "Estimativas Anuais da População"
 
   - indicador: "Nascimentos"
+    valor: 175
+    ano: 2022
+    fonte: "Estatísticas Vitais / INE"
+  - indicador: "Nascimentos"
     valor: 180
     ano: 2023
     fonte: "Estatísticas Vitais / INE"
 
+  - indicador: "Óbitos"
+    valor: 350
+    ano: 2022
+    fonte: "Estatísticas Vitais / INE"
   - indicador: "Óbitos"
     valor: 340
     ano: 2023
     fonte: "Estatísticas Vitais / INE"
 
   - indicador: "Beneficiários do RSI"
-    valor: 310
-    ano: 2023
-    fonte: "Segurança Social"
-
-  - indicador: "Beneficiários do subsídio de desemprego"
-    valor: 420
-    ano: 2023
-    fonte: "Instituto do Emprego e Formação Profissional"
-
-  - indicador: "Pensão média"
-    valor: 485.50
-    ano: 2023
-    fonte: "Segurança Social"
-
-  - indicador: "Rendimento bruto médio familiar"
-    valor: 11500
+    valor: 325
     ano: 2022
-    fonte: "Autoridade Tributária / INE"
-
-  - indicador: "N.º de agregados"
-    valor: 11200
-    ano: 2021
-    fonte: "Censos / INE"
-
-  # --- Ambiente ---
-  - indicador: "Resíduos urbanos recolhidos"
-    valor: 18500
-    ano: 2023
-    fonte: "Relatórios Ambientais Locais"
-
-  - indicador: "Água segura"
-    valor: 99.2
-    ano: 2023
-    fonte: "ERSAR"
-
-  - indicador: "Modo de transporte individual"
-    valor: 75.5
-    ano: 2021
-    fonte: "Censos / INE"
-
-  # --- Habitação ---
-  - indicador: "Fogos concluídos"
-    valor: 45
-    ano: 2023
-    fonte: "Estatísticas da Construção e Habitação"
-
-  - indicador: "Valor mediano de vendas por m²"
-    valor: 850
-    ano: 2024
-    fonte: "INE / Cadernetas Prediais"
-
-  - indicador: "Valor mediano de avaliação bancária por m²"
-    valor: 910
-    ano: 2024
-    fonte: "INE / Avaliação Bancária"
-
-  - indicador: "Novos contratos de arrendamento"
-    valor: 120
-    ano: 2024
-    fonte: "Porto do Arrendamento / INE"
+    fonte: "Segurança Social"
+  - indicador: "Beneficiários do RSI"
