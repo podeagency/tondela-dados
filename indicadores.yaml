@@ -17,15 +17,15 @@ indicadores:
   Turismo:
     - nome: Dormidas
       fonte: INE
-      codigo: "0008303"
+      codigo: null
       unidade: "N.º"
     - nome: Hóspedes
       fonte: INE
-      codigo: "0008302"
+      codigo: null
       unidade: "N.º"
     - nome: Estada média
       fonte: INE
-      codigo: "0008304"
+      codigo: null
       unidade: "N.º de noites"
       nota: "Média em estabelecimentos hoteleiros"
 
@@ -40,38 +40,38 @@ indicadores:
       unidade: "N.º"
 
   Empresas:
-    - {nome: Empresas (n.º),                fonte: INE, codigo: "0008331", unidade: "N.º"}
-    - {nome: Novas empresas,               fonte: INE, codigo: "0008336", unidade: "N.º"}
-    - {nome: Empresas dissolvidas,         fonte: INE, codigo: "0008338", unidade: "N.º"}
-    - {nome: Pessoal ao serviço,           fonte: INE, codigo: "0008332", unidade: "N.º"}
-    - {nome: Gastos com pessoal,           fonte: INE, codigo: "0008342", unidade: "€"}
-    - {nome: Volume de negócios,           fonte: INE, codigo: "0008341", unidade: "€"}
-    - {nome: VAB,                          fonte: INE, codigo: "0008340", unidade: "€"}
-    - {nome: Resultado líquido,            fonte: INE, codigo: null,      unidade: "€", nota: "Confirmar se existe ao nível municipal"}
-    - {nome: Exportações,                  fonte: INE, codigo: "0008344", unidade: "€"}
-    - {nome: Importações,                  fonte: INE, codigo: "0008345", unidade: "€"}
-    - {nome: Balança comercial,            fonte: INE, codigo: null,      unidade: "€", nota: "Pode ser calculado a jusante"}
+    - {nome: Empresas (n.º),                 fonte: INE, codigo: null, unidade: "N.º"}
+    - {nome: Novas empresas,                fonte: INE, codigo: null, unidade: "N.º"}
+    - {nome: Empresas dissolvidas,          fonte: INE, codigo: null, unidade: "N.º"}
+    - {nome: Pessoal ao serviço,            fonte: INE, codigo: null, unidade: "N.º"}
+    - {nome: Gastos com pessoal,            fonte: INE, codigo: null, unidade: "€"}
+    - {nome: Volume de negócios,            fonte: INE, codigo: null, unidade: "€"}
+    - {nome: VAB,                           fonte: INE, codigo: null, unidade: "€"}
+    - {nome: Resultado líquido,             fonte: INE, codigo: null,      unidade: "€", nota: "Confirmar se existe ao nível municipal"}
+    - {nome: Exportações,                   fonte: INE, codigo: null, unidade: "€"}
+    - {nome: Importações,                   fonte: INE, codigo: null, unidade: "€"}
+    - {nome: Balança comercial,             fonte: INE, codigo: null,      unidade: "€", nota: "Pode ser calculado a jusante"}
 
   Território / Demografia:
-    - {nome: População residente,                  fonte: INE,     codigo: "0012917", unidade: "N.º", filtros: {dim_3: "T"}}
-    - {nome: Hóspedes por habitante,               fonte: INE,     codigo: null,      unidade: "N.º"}
-    - {nome: População estrangeira legal,          fonte: INE,     codigo: "0008272", unidade: "N.º"}
-    - {nome: Saldo migratório,                     fonte: INE,     codigo: "0008278", unidade: "N.º"}
-    - {nome: Nascimentos,                          fonte: INE,     codigo: "0000308", unidade: "N.º"}
-    - {nome: Óbitos,                               fonte: INE,     codigo: "0000309", unidade: "N.º"}
+    - {nome: População residente,                  fonte: INE,      codigo: null, unidade: "N.º", filtros: {dim_3: "T"}}
+    - {nome: Hóspedes por habitante,               fonte: INE,      codigo: null,      unidade: "N.º"}
+    - {nome: População estrangeira legal,          fonte: INE,      codigo: null, unidade: "N.º"}
+    - {nome: Saldo migratório,                     fonte: INE,      codigo: null,      unidade: "N.º"}
+    - {nome: Nascimentos,                          fonte: INE,      codigo: null,      unidade: "N.º"}
+    - {nome: Óbitos,                               fonte: INE,      codigo: null,      unidade: "N.º"}
     - {nome: Beneficiários do RSI,                 fonte: Pordata, codigo: null,      unidade: "N.º", nota: "Origem Segurança Social"}
     - {nome: Beneficiários do subsídio de desemprego, fonte: Pordata, codigo: null,   unidade: "N.º", nota: "Origem Segurança Social"}
     - {nome: Pensão média,                         fonte: Pordata, codigo: null,      unidade: "€",   nota: "Sem conector Pordata ainda"}
     - {nome: Rendimento bruto médio familiar,      fonte: Pordata, codigo: null,      unidade: "€",   nota: "Sem conector Pordata ainda"}
-    - {nome: N.º de agregados,                     fonte: INE,     codigo: "0011494", unidade: "N.º"}
+    - {nome: N.º de agregados,                     fonte: INE,      codigo: "0011494", unidade: "N.º"}
 
   Ambiente:
-    - {nome: Resíduos urbanos recolhidos,   fonte: INE, codigo: "0008775", unidade: "t"}
+    - {nome: Resíduos urbanos recolhidos,   fonte: INE, codigo: null, unidade: "t"}
     - {nome: Água segura,                   fonte: INE, codigo: null,      unidade: "%", nota: "Origem ERSAR"}
     - {nome: Modo de transporte individual, fonte: INE, codigo: null,      unidade: "%", nota: "Provavelmente Censos"}
 
   Habitação:
-    - {nome: Fogos concluídos,                             fonte: INE, codigo: "0002161", unidade: "N.º"}
-    - {nome: Valor mediano de vendas por m²,               fonte: INE, codigo: "0010629", unidade: "€/m²"}
-    - {nome: Valor mediano de avaliação bancária por m²,   fonte: INE, codigo: "0010950", unidade: "€/m²"}
-    - {nome: Novos contratos de arrendamento,              fonte: INE, codigo: "0011044", unidade: "N.º"}
+    - {nome: Fogos concluídos,                             fonte: INE, codigo: null, unidade: "N.º"}
+    - {nome: Valor mediano de vendas por m²,               fonte: INE, codigo: null, unidade: "€/m²"}
+    - {nome: Valor mediano de avaliação bancária por m²,   fonte: INE, codigo: null, unidade: "€/m²"}
+    - {nome: Novos contratos de arrendamento,              fonte: INE, codigo: null, unidade: "N.º"}
