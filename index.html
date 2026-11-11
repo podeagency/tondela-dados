@@ -112,10 +112,10 @@ select option{background:#00322E;color:#EBFDE7}input:focus,select:focus{border-c
 </footer>
 
 <script>
-/* ===== CONFIGURAÇÃO SUPABASE ===== */
+/* ===== CONFIGURAÇÃO SUPABASE REAL ===== */
 const CFG = { 
-  url: "https://zofnpxwckpudcddpukwx.supabase.co", 
-  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvZm5weHdja3B1ZGNkZHB1a3d4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg3MjksImV4cCI6MjA1NjgxNDcyOX0.aD4dGZJ414gGvCunT2d53_hB0k_mJz5-p0Qv6W21Y_g", 
+  url: "https://ldwufovmiyqjnbvhfmfm.supabase.co", 
+  key: "sb_publishable_4BWtPxy5ggxuK-GbYjjPow_teURJNZ_", 
   table: "indicadores_tondela" 
 };
 
@@ -166,9 +166,7 @@ async function load() {
   $("#kpis").innerHTML = '<div class="sk"></div>'.repeat(4);
   try {
     if (!window.supabase) throw new Error("Biblioteca Supabase não carregada (verifique a ligação à Internet).");
-   db = db || window.supabase.createClient(CFG.url, CFG.key, {
-  auth: { persistSession: false, autoRefreshToken: false }
-});
+    db = db || window.supabase.createClient(CFG.url, CFG.key, { auth: { persistSession: false, autoRefreshToken: false } });
     let all = [], from = 0;
     for (;;) {
       const { data, error } = await db.from(CFG.table).select(COLS).order("ano").range(from, from + 999);
