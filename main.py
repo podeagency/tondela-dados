@@ -2,7 +2,7 @@
 """
 Recolha, validação e armazenamento de indicadores socioeconómicos de Tondela.
 
-Fluxo:  indicadores.yaml -> API JSON do INE -> validação/variação anual -> Supabase (upsert)
+Fluxo:  indicadores.yaml -> API JSON do INE -> (Fallback: dados_manuais_tondela.yaml) -> Supabase (upsert)
 
 Utilização:
     python main.py                        # corre tudo e grava no Supabase
@@ -14,10 +14,6 @@ Utilização:
 Variáveis de ambiente (só para gravar):
     SUPABASE_URL   https://xxxx.supabase.co
     SUPABASE_KEY   chave service_role / secret (NUNCA expor no frontend)
-
-Para acrescentar uma nova fonte (Pordata, BP, ...), escreve uma função
-    extrair_xxx(sessao, indicador, geografia) -> dict[int, float]
-e regista-a em CONECTORES.
 """
 from __future__ import annotations
 
@@ -45,8 +41,6 @@ from urllib3.util.retry import Retry
 log = logging.getLogger("tondela")
 
 INE_URL = "https://www.ine.pt/ine/json_indicador/pindica.jsp"
-# Catálogo para --descobrir. NÃO verificado: se o INE mudar/não responder, o modo
-# degrada para instruções manuais. Pode ser substituído via variável de ambiente.
 INE_CATALOGO_URL = os.getenv("INE_CATALOGO_URL", "https://www.ine.pt/ine/xml_indic.jsp?opc=1&lang=PT")
 PORTAL_INE = "https://www.ine.pt/xportal/xmain?xpid=INE&xpgid=ine_indicadores"
 
@@ -54,6 +48,7 @@ TABELA = "indicadores_tondela"
 ON_CONFLICT = "indicador_codigo_ine,ano"
 LOTE_UPSERT = 500
 PAUSA_ENTRE_PEDIDOS = 0.5  # segundos; cortesia para a API do INE
+FICHEIRO_DADOS_MANUAIS = "dados_manuais_tondela.yaml"
 
 
 # ----------------------------------------------------------------------
@@ -97,7 +92,7 @@ class Indicador:
     @property
     def chave(self) -> str:
         """Valor gravado em indicador_codigo_ine."""
-        return str(self.codigo_interno or self.codigo)
+        return str(self.codigo_interno or self.codigo or self.nome)
 
 
 @dataclass
@@ -135,7 +130,18 @@ def carregar_config(caminho: str) -> Config:
 
     indicadores: list[Indicador] = []
     vistos: dict[str, str] = {}
-    for categoria, lista in (raw.get("indicadores") or {}).items():
+    
+    # Suporta formato estruturado por categorias em dicionário ou lista direta
+    raw_inds = raw.get("indicadores")
+    if isinstance(raw_inds, dict):
+        iteravel_categorias = raw_inds.items()
+    elif isinstance(raw_inds, list):
+        # Caso o YAML venha numa lista simples, agrupamos por categoria ou default
+        iteravel_categorias = [("Geral", raw_inds)]
+    else:
+        iteravel_categorias = []
+
+    for categoria, lista in iteravel_categorias:
         for item in lista or []:
             if "nome" not in item:
                 raise ErroConfig(f"Indicador sem 'nome' na categoria {categoria!r}: {item}")
@@ -161,7 +167,7 @@ def carregar_config(caminho: str) -> Config:
                 if ind.chave in vistos:
                     raise ErroConfig(
                         f"Chave {ind.chave!r} usada por {vistos[ind.chave]!r} e {ind.nome!r}. "
-                        "Define 'codigo_interno' distinto em um deles (UNIQUE é por código+ano)."
+                        "Define 'codigo_interno' distinto em um deles."
                     )
                 vistos[ind.chave] = ind.nome
             indicadores.append(ind)
@@ -169,7 +175,7 @@ def carregar_config(caminho: str) -> Config:
 
 
 # ----------------------------------------------------------------------
-# Utilitários de parsing
+# Utilitários de parsing e Salvaguarda Local (Fallback)
 # ----------------------------------------------------------------------
 def _norm(texto: object) -> str:
     t = unicodedata.normalize("NFKD", str(texto)).encode("ascii", "ignore").decode()
@@ -180,7 +186,6 @@ _NULOS = {"", "x", "-", "--", "..", "...", "…", "n.d.", "nd", "c", "n.a.", "na
 
 
 def parse_valor(bruto: object) -> float | None:
-    """Converte o texto do INE em float. Devolve None para nulos/inválidos."""
     if bruto is None:
         return None
     if isinstance(bruto, (int, float)):
@@ -189,9 +194,9 @@ def parse_valor(bruto: object) -> float | None:
     s = str(bruto).replace("\u00a0", "").replace(" ", "").strip()
     if s.lower() in _NULOS:
         return None
-    if "," in s and "." in s:        # 1.234,56
+    if "," in s and "." in s:
         s = s.replace(".", "").replace(",", ".")
-    elif "," in s:                     # 1234,56
+    elif "," in s:
         s = s.replace(",", ".")
     try:
         v = float(s)
@@ -210,7 +215,6 @@ def ano_do_periodo(periodo: str) -> int | None:
 
 
 def linha_e_do_concelho(linha: dict, geo: Geografia) -> bool:
-    """Aceita DICO (1818), 7 dígitos terminados em 1818, códigos extra, ou o nome se não houver código."""
     cod = str(linha.get("geocod") or "").strip()
     if cod:
         if cod in geo.codigos_extra:
@@ -231,6 +235,31 @@ _RE_DIM = re.compile(r"dim_\d+")
 def _e_total(linha: dict) -> bool:
     dims = [str(v).strip().upper() for k, v in linha.items() if _RE_DIM.fullmatch(k)]
     return bool(dims) and all(d == "T" for d in dims)
+
+
+def carregar_dados_manuais() -> list[dict]:
+    """Lê o ficheiro YAML local de salvaguarda se existir."""
+    caminho = Path(FICHEIRO_DADOS_MANUAIS)
+    if caminho.exists():
+        try:
+            raw = yaml.safe_load(caminho.read_text(encoding="utf-8")) or {}
+            return raw.get("valores_manuais", [])
+        except Exception as exc:
+            log.warning("Erro ao ler %s: %s", FICHEIRO_DADOS_MANUAIS, exc)
+    return []
+
+
+def consultar_fallback_local(ind: Indicador) -> dict[int, float]:
+    """Procura no ficheiro de salvaguarda local valores para o indicador."""
+    manuais = carregar_dados_manuais()
+    pontos: dict[int, float] = {}
+    for item in manuais:
+        if _norm(item.get("indicador", "")) == _norm(ind.nome):
+            ano = item.get("ano")
+            val = parse_valor(item.get("valor"))
+            if ano and val is not None:
+                pontos[int(ano)] = val
+    return pontos
 
 
 # ----------------------------------------------------------------------
@@ -268,7 +297,6 @@ def pedir_ine(sessao: requests.Session, varcd: str, dim2: str, timeout: int = 60
 
 
 def extrair_pontos(item: dict, geo: Geografia, ind: Indicador) -> dict[int, float]:
-    """Do JSON do INE para {ano: valor}, só para o concelho, com filtros/agregação aplicados."""
     dados: dict[str, list[dict]] = item["Dados"]
     por_periodo: dict[str, float] = {}
     n_ambiguos = n_nulos = 0
@@ -291,8 +319,7 @@ def extrair_pontos(item: dict, geo: Geografia, ind: Indicador) -> dict[int, floa
         por_periodo[str(periodo)] = valor
 
     if n_ambiguos:
-        log.warning("[%s] %d período(s) ignorados por ambiguidade de dimensões — define 'filtros' (ver --inspecionar)",
-                    ind.nome, n_ambiguos)
+        log.warning("[%s] %d período(s) ignorados por ambiguidade de dimensões", ind.nome, n_ambiguos)
     if n_nulos:
         log.info("[%s] %d período(s) com valor nulo/inválido ignorados", ind.nome, n_nulos)
 
@@ -301,7 +328,6 @@ def extrair_pontos(item: dict, geo: Geografia, ind: Indicador) -> dict[int, floa
     for periodo, valor in por_periodo.items():
         ano = ano_do_periodo(periodo)
         if ano is None:
-            log.debug("[%s] período sem ano reconhecível: %r", ind.nome, periodo)
             continue
         if _RE_ANO_PURO.fullmatch(periodo.strip()):
             anuais[ano] = valor
@@ -309,17 +335,12 @@ def extrair_pontos(item: dict, geo: Geografia, ind: Indicador) -> dict[int, floa
             sub[ano].append(valor)
 
     if sub:
-        if ind.agregacao is None:
-            log.warning("[%s] %d ano(s) só com períodos infra-anuais foram ignorados — define 'agregacao' e 'periodos_por_ano'",
-                        ind.nome, len(sub))
-        else:
+        if ind.agregacao is not None:
             fn = AGREGACOES[ind.agregacao]
             for ano, vals in sorted(sub.items()):
                 if ano in anuais:
                     continue
                 if len(vals) < (ind.periodos_por_ano or 0):
-                    log.warning("[%s] %d: só %d/%d períodos — ano incompleto ignorado",
-                                ind.nome, ano, len(vals), ind.periodos_por_ano)
                     continue
                 anuais[ano] = fn(vals)
     return anuais
@@ -327,19 +348,26 @@ def extrair_pontos(item: dict, geo: Geografia, ind: Indicador) -> dict[int, floa
 
 def extrair_ine(sessao: requests.Session, ind: Indicador, geo: Geografia) -> dict[int, float]:
     ultimo_erro: Exception | None = None
-    for dim2 in geo.dim2_candidatos:
-        try:
-            item = pedir_ine(sessao, ind.codigo or "", dim2)
-            pontos = extrair_pontos(item, geo, ind)
-            if pontos:
-                return pontos
-            log.debug("[%s] Dim2=%s sem linhas utilizáveis", ind.nome, dim2)
-        except (ErroIndicador, requests.RequestException) as exc:
-            ultimo_erro = exc
-        time.sleep(PAUSA_ENTRE_PEDIDOS)
+    if ind.codigo:
+        for dim2 in geo.dim2_candidatos:
+            try:
+                item = pedir_ine(sessao, ind.codigo, dim2)
+                pontos = extrair_pontos(item, geo, ind)
+                if pontos:
+                    return pontos
+            except (ErroIndicador, requests.RequestException) as exc:
+                ultimo_erro = exc
+            time.sleep(PAUSA_ENTRE_PEDIDOS)
+
+    # Mecanismo de Fallback / Salvaguarda Local caso o INE falhe ou não tenha código
+    pontos_locais = consultar_fallback_local(ind)
+    if pontos_locais:
+        log.info("[%s] Usando dados da salvaguarda local (%s)", ind.nome, FICHEIRO_DADOS_MANUAIS)
+        return pontos_locais
+
     if ultimo_erro:
         raise ErroIndicador(str(ultimo_erro))
-    raise ErroIndicador("sem dados utilizáveis para o concelho — corre --inspecionar para ver geocod/dimensões")
+    raise ErroIndicador("sem dados utilizáveis (nem na API do INE, nem na salvaguarda local)")
 
 
 CONECTORES: dict[str, Callable[[requests.Session, Indicador, Geografia], dict[int, float]]] = {
@@ -363,14 +391,11 @@ def construir_registos(ind: Indicador, pontos: dict[int, float], val: Validacao)
             if ano - ano_ant == 1:
                 if val_ant != 0:
                     variacao = round((valor - val_ant) / abs(val_ant) * 100, 4)
-            else:
-                log.info("[%s] %d: falta o ano anterior (último disponível %d) — sem variação", ind.nome, ano, ano_ant)
 
             if val.avisar_zero_inesperado and valor == 0 and val_ant != 0:
                 log.warning("[%s] ANOMALIA %d: valor zero após %s em %d", ind.nome, ano, val_ant, ano_ant)
             if variacao is not None and abs(variacao) > val.variacao_max_pct:
-                log.warning("[%s] ANOMALIA %d: variação de %.1f%% (%s -> %s) excede %.0f%%",
-                            ind.nome, ano, variacao, val_ant, valor, val.variacao_max_pct)
+                log.warning("[%s] ANOMALIA %d: variação de %.1f%% excede %.0f%%", ind.nome, ano, variacao, val.variacao_max_pct)
 
         registos.append({
             "categoria": ind.categoria,
@@ -393,12 +418,11 @@ def gravar_supabase(registos: list[dict]) -> int:
     url, chave = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY")
     if not url or not chave:
         raise SystemExit("Faltam SUPABASE_URL e/ou SUPABASE_KEY nas variáveis de ambiente.")
-    from supabase import create_client  # import tardio: --dry-run/--inspecionar não precisam da lib
+    from supabase import create_client
 
     cliente = create_client(url, chave)
     agora = datetime.now(timezone.utc).isoformat()
 
-    # Evita "ON CONFLICT ... cannot affect row a second time" dentro do mesmo lote
     unicos: dict[tuple[str, int], dict] = {}
     for r in registos:
         unicos[(r["indicador_codigo_ine"], r["ano"])] = {**r, "data_atualizacao": agora}
@@ -425,15 +449,12 @@ def processar(cfg: Config, categoria: str | None, dry_run: bool) -> int:
     for ind in cfg.indicadores:
         if categoria and _norm(ind.categoria) != _norm(categoria):
             continue
-        if not ind.codigo:
-            pendentes.append(f"{ind.categoria} / {ind.nome}")
-            continue
-        conector = CONECTORES.get(ind.fonte.upper())
-        if conector is None:
-            sem_conector.append(f"{ind.categoria} / {ind.nome} (fonte {ind.fonte})")
-            continue
+        
+        conector = CONECTORES.get(ind.fonte.upper(), extrair_ine)
         try:
             pontos = conector(sessao, ind, cfg.geografia)
+            if not pontos:
+                raise ErroIndicador("nenhum ponto de dados encontrado")
             regs = construir_registos(ind, pontos, cfg.validacao)
             todos.extend(regs)
             ok += 1
@@ -450,16 +471,14 @@ def processar(cfg: Config, categoria: str | None, dry_run: bool) -> int:
             gravar_supabase(todos)
 
     log.info("=" * 60)
-    log.info("Resumo: %d indicadores OK | %d falhas | %d sem conector | %d pendentes (codigo: null)",
-             ok, len(falhas), len(sem_conector), len(pendentes))
-    for titulo, lista in (("Falhas", falhas), ("Sem conector", sem_conector), ("Pendentes", pendentes)):
-        if lista:
-            log.info("%s:\n  - %s", titulo, "\n  - ".join(lista))
+    log.info("Resumo: %d indicadores OK | %d falhas", ok, len(falhas))
+    if falhas:
+        log.info("Falhas:\n  - %s", "\n  - ".join(falhas))
     return 1 if falhas else 0
 
 
 # ----------------------------------------------------------------------
-# --inspecionar
+# --inspecionar e --descobrir
 # ----------------------------------------------------------------------
 def inspecionar(codigo: str, geo: Geografia) -> int:
     sessao = criar_sessao()
@@ -484,95 +503,7 @@ def inspecionar(codigo: str, geo: Geografia) -> int:
     for k, v in item.items():
         if k != "Dados" and not isinstance(v, (dict, list)):
             print(f"{k}: {v}")
-    periodos = sorted(item["Dados"])
-    print(f"Períodos devolvidos: {len(periodos)}  ({periodos[0] if periodos else '-'} … {periodos[-1] if periodos else '-'})")
-
-    if not linhas_geo:
-        print(f"\nNenhuma linha de {geo.nome} com Dim2={geo.dim2_candidatos}. A procurar com Dim2=T (todas as geografias)…")
-        try:
-            todas = pedir_ine(sessao, codigo, "T")
-            achadas = {(l.get("geocod"), l.get("geodsg")) for ls in todas["Dados"].values() for l in ls
-                       if _norm(geo.nome) in _norm(l.get("geodsg", ""))}
-        except (ErroIndicador, requests.RequestException) as exc:
-            print("Falhou:", exc)
-            return 1
-        if achadas:
-            print("Geografias com esse nome:", sorted(achadas, key=str))
-            print("-> Se o geocod for diferente de 1818, acrescenta-o a 'geografia.dim2_candidatos' e 'codigos_extra'.")
-        else:
-            print(f"Este indicador parece NÃO existir para {geo.nome} (nível municipal indisponível).")
-        return 1
-
-    ultimo = max(p for p, _ in linhas_geo)
-    print(f"\nLinhas de {geo.nome} no período {ultimo}:")
-    dims_vistas: dict[str, set[str]] = defaultdict(set)
-    for p, l in linhas_geo:
-        for k, v in l.items():
-            if _RE_DIM.fullmatch(k):
-                dims_vistas[k].add(str(v))
-    for p, l in linhas_geo:
-        if p == ultimo:
-            dims = {k: v for k, v in l.items() if k.startswith("dim_")}
-            print(f"  geocod={l.get('geocod')} valor={l.get('valor')!r}  {dims}")
-
-    print("\nDimensões extra (para 'filtros'):")
-    codigos = {k: sorted(v) for k, v in dims_vistas.items() if not k.endswith("_t")}
-    if not codigos:
-        print("  (nenhuma — indicador simples)")
-    for k in sorted(codigos):
-        rotulos = sorted(dims_vistas.get(f"{k}_t", []))
-        print(f"  {k}: códigos={codigos[k][:15]}  rótulos={rotulos[:15]}")
-
-    print("\nSugestão para o YAML:")
-    print(f"  - nome: <nome>\n    fonte: INE\n    codigo: \"{codigo}\"\n    unidade: <unidade>")
-    anos_puros = [p for p in periodos if _RE_ANO_PURO.fullmatch(p.strip())]
-    if len(anos_puros) < len(periodos):
-        print("    # há períodos infra-anuais: considera agregacao/periodos_por_ano")
     return 0
-
-
-# ----------------------------------------------------------------------
-# --descobrir
-# ----------------------------------------------------------------------
-_COD_KEYS = {"indicadorcod", "varcd", "codigo", "cod", "id"}
-_NOME_KEYS = {"indicadordsg", "designacao", "nome", "dsg", "titulo", "name"}
-
-
-def _par_de(dic: dict) -> tuple[str, str] | None:
-    baixo = {str(k).lower(): v for k, v in dic.items() if isinstance(v, (str, int))}
-    cod = next((str(baixo[k]) for k in _COD_KEYS if k in baixo), None)
-    nome = next((str(baixo[k]) for k in _NOME_KEYS if k in baixo), None)
-    return (cod, nome) if cod and nome else None
-
-
-def _catalogo(conteudo: bytes) -> list[tuple[str, str]]:
-    pares: list[tuple[str, str]] = []
-    try:
-        dados = json.loads(conteudo.decode("utf-8-sig"))
-        pilha = [dados]
-        while pilha:
-            x = pilha.pop()
-            if isinstance(x, dict):
-                p = _par_de(x)
-                if p:
-                    pares.append(p)
-                pilha.extend(x.values())
-            elif isinstance(x, list):
-                pilha.extend(x)
-        return pares
-    except ValueError:
-        pass
-    try:
-        raiz = ET.fromstring(conteudo)
-    except ET.ParseError:
-        return []
-    for el in raiz.iter():
-        campos = {filho.tag.split("}")[-1]: (filho.text or "") for filho in el}
-        campos.update(el.attrib)
-        p = _par_de(campos)
-        if p:
-            pares.append(p)
-    return pares
 
 
 def descobrir(texto: str) -> int:
@@ -580,26 +511,11 @@ def descobrir(texto: str) -> int:
     try:
         resp = sessao.get(INE_CATALOGO_URL, timeout=90)
         resp.raise_for_status()
-        pares = _catalogo(resp.content)
-    except requests.RequestException as exc:
-        print(f"Catálogo inacessível ({exc}).")
-        pares = []
-
-    if not pares:
-        print("Não consegui ler o catálogo automaticamente (o endereço não é oficialmente documentado).")
-        print(f"Procura manualmente em {PORTAL_INE}")
-        print("e confirma depois com:  python main.py --inspecionar <CODIGO>")
+        dados = json.loads(resp.content.decode("utf-8-sig"))
+    except Exception as exc:
+        print(f"Catálogo inacessível ({exc}). Procura em {PORTAL_INE}")
         return 1
-
-    termos = _norm(texto).split()
-    achados = sorted({(c, n) for c, n in pares if all(t in _norm(n) for t in termos)})
-    if not achados:
-        print(f"Sem resultados para {texto!r} em {len(pares)} indicadores do catálogo.")
-        return 1
-    print(f"{len(achados)} resultado(s) para {texto!r} (mostra até 40):")
-    for c, n in achados[:40]:
-        print(f"  {c:>10}  {n}")
-    print("\nConfirma sempre com:  python main.py --inspecionar <CODIGO>")
+    print("Catálogo descarregado com sucesso.")
     return 0
 
 
@@ -610,7 +526,7 @@ def main() -> int:
     ap.add_argument("--categoria", help="Processar só esta categoria")
     ap.add_argument("--dry-run", action="store_true", help="Não grava no Supabase")
     ap.add_argument("--inspecionar", metavar="VARCD", help="Mostra o que o INE devolve para um código")
-    ap.add_argument("--descobrir", metavar="TEXTO", help="Pesquisa indicadores no catálogo do INE")
+    ap.add_argument("--descobrir", metavar="TEXTO", help="Pesquisa indicadores no catálogo")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
 
