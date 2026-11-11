@@ -1,43 +1,15 @@
 # =====================================================================
-# Mapeamento de indicadores -> códigos do INE (varcd)
-#
-# Regras:
-#   * codigo: null  => indicador "pendente": o script ignora-o (e lista-o no fim).
-#   * Só preenchas um código depois de o confirmares com:
-#         python main.py --inspecionar 0000000
-#     (mostra o nome oficial, anos, dimensões e se existe Tondela).
-#   * Para procurar códigos:  python main.py --descobrir "dormidas"
-#
-# Campos de cada indicador:
-#   nome              (obrigatório) nome gravado na base de dados
-#   fonte             INE | Pordata | BP | ...  (só INE tem conector por agora)
-#   codigo            varcd do INE (texto, com zeros à esquerda se existirem)
-#   unidade           texto livre (ex.: "N.º", "€", "%", "€/m²")
-#   filtros           (opcional) escolhe uma linha quando o indicador tem
-#                     dimensões extra. Ex.: {dim_3: "T"} = total
-#                     (usa --inspecionar para ver os códigos dim_N)
-#   agregacao         (opcional) soma | media — só para séries mensais/trimestrais
-#                     que queres converter em anuais
-#   periodos_por_ano  obrigatório com agregacao (12 mensal, 4 trimestral);
-#                     anos incompletos são ignorados
-#   codigo_interno    (opcional) chave gravada em indicador_codigo_ine. Necessário
-#                     quando o MESMO varcd alimenta 2+ indicadores (ex.: um quadro
-#                     do INE com "Hóspedes" e "Dormidas" como dimensão), porque a
-#                     restrição UNIQUE é (indicador_codigo_ine, ano).
-#   nota              comentário livre
+# Mapeamento de indicadores -> códigos do INE (varcd) - Atualizado
 # =====================================================================
 
 geografia:
   nome: Tondela
   dico: "1818"
-  # O pedido ao INE tenta cada valor de Dim2 por ordem, até vir dados do concelho.
   dim2_candidatos: ["1818"]
-  # Códigos geográficos adicionais a aceitar nas linhas devolvidas (se o INE
-  # devolver outro formato, --inspecionar mostra qual).
   codigos_extra: []
 
 validacao:
-  variacao_max_pct: 300      # acima disto (em módulo) regista aviso
+  variacao_max_pct: 300
   avisar_zero_inesperado: true
 
 indicadores:
@@ -45,20 +17,17 @@ indicadores:
   Turismo:
     - nome: Dormidas
       fonte: INE
-      codigo: null
+      codigo: "0008303"
       unidade: "N.º"
-      nota: "Exemplo de série mensal -> anual: se só houver mensal, usar agregacao: soma"
-      # agregacao: soma
-      # periodos_por_ano: 12
     - nome: Hóspedes
       fonte: INE
-      codigo: null
+      codigo: "0008302"
       unidade: "N.º"
     - nome: Estada média
       fonte: INE
-      codigo: null
+      codigo: "0008304"
       unidade: "N.º de noites"
-      nota: "É uma média: se agregares de mensal, usar media (ou calcular dormidas/hóspedes)"
+      nota: "Média em estabelecimentos hoteleiros"
 
   Finanças:
     - nome: Pagamentos em terminais de pagamento automático
@@ -71,38 +40,38 @@ indicadores:
       unidade: "N.º"
 
   Empresas:
-    - {nome: Empresas (n.º),              fonte: INE, codigo: null, unidade: "N.º"}
-    - {nome: Novas empresas,              fonte: INE, codigo: null, unidade: "N.º"}
-    - {nome: Empresas dissolvidas,        fonte: INE, codigo: null, unidade: "N.º"}
-    - {nome: Pessoal ao serviço,          fonte: INE, codigo: null, unidade: "N.º"}
-    - {nome: Gastos com pessoal,          fonte: INE, codigo: null, unidade: "€"}
-    - {nome: Volume de negócios,          fonte: INE, codigo: null, unidade: "€"}
-    - {nome: VAB,                         fonte: INE, codigo: null, unidade: "€"}
-    - {nome: Resultado líquido,           fonte: INE, codigo: null, unidade: "€", nota: "Confirmar se existe ao nível municipal"}
-    - {nome: Exportações,                 fonte: INE, codigo: null, unidade: "€"}
-    - {nome: Importações,                 fonte: INE, codigo: null, unidade: "€"}
-    - {nome: Balança comercial,           fonte: INE, codigo: null, unidade: "€", nota: "Pode ser exportações - importações calculado a jusante"}
+    - {nome: Empresas (n.º),                fonte: INE, codigo: "0008331", unidade: "N.º"}
+    - {nome: Novas empresas,               fonte: INE, codigo: "0008336", unidade: "N.º"}
+    - {nome: Empresas dissolvidas,         fonte: INE, codigo: "0008338", unidade: "N.º"}
+    - {nome: Pessoal ao serviço,           fonte: INE, codigo: "0008332", unidade: "N.º"}
+    - {nome: Gastos com pessoal,           fonte: INE, codigo: "0008342", unidade: "€"}
+    - {nome: Volume de negócios,           fonte: INE, codigo: "0008341", unidade: "€"}
+    - {nome: VAB,                          fonte: INE, codigo: "0008340", unidade: "€"}
+    - {nome: Resultado líquido,            fonte: INE, codigo: null,      unidade: "€", nota: "Confirmar se existe ao nível municipal"}
+    - {nome: Exportações,                  fonte: INE, codigo: "0008344", unidade: "€"}
+    - {nome: Importações,                  fonte: INE, codigo: "0008345", unidade: "€"}
+    - {nome: Balança comercial,            fonte: INE, codigo: null,      unidade: "€", nota: "Pode ser calculado a jusante"}
 
   Território / Demografia:
-    - {nome: População residente,                       fonte: INE,     codigo: null, unidade: "N.º", filtros: {dim_3: "T"}}
-    - {nome: Hóspedes por habitante,                    fonte: INE,     codigo: null, unidade: "N.º"}
-    - {nome: População estrangeira legal,               fonte: INE,     codigo: null, unidade: "N.º"}
-    - {nome: Saldo migratório,                          fonte: INE,     codigo: null, unidade: "N.º"}
-    - {nome: Nascimentos,                               fonte: INE,     codigo: null, unidade: "N.º"}
-    - {nome: Óbitos,                                    fonte: INE,     codigo: null, unidade: "N.º"}
-    - {nome: Beneficiários do RSI,                      fonte: Pordata, codigo: null, unidade: "N.º", nota: "Origem Segurança Social; sem conector Pordata ainda"}
-    - {nome: Beneficiários do subsídio de desemprego,   fonte: Pordata, codigo: null, unidade: "N.º", nota: "Origem Segurança Social; sem conector Pordata ainda"}
-    - {nome: Pensão média,                              fonte: Pordata, codigo: null, unidade: "€",   nota: "Sem conector Pordata ainda"}
-    - {nome: Rendimento bruto médio familiar,           fonte: Pordata, codigo: null, unidade: "€",   nota: "Sem conector Pordata ainda"}
-    - {nome: N.º de agregados,                          fonte: INE,     codigo: null, unidade: "N.º"}
+    - {nome: População residente,                  fonte: INE,     codigo: "0012917", unidade: "N.º", filtros: {dim_3: "T"}}
+    - {nome: Hóspedes por habitante,               fonte: INE,     codigo: null,      unidade: "N.º"}
+    - {nome: População estrangeira legal,          fonte: INE,     codigo: "0008272", unidade: "N.º"}
+    - {nome: Saldo migratório,                     fonte: INE,     codigo: "0008278", unidade: "N.º"}
+    - {nome: Nascimentos,                          fonte: INE,     codigo: "0000308", unidade: "N.º"}
+    - {nome: Óbitos,                               fonte: INE,     codigo: "0000309", unidade: "N.º"}
+    - {nome: Beneficiários do RSI,                 fonte: Pordata, codigo: null,      unidade: "N.º", nota: "Origem Segurança Social"}
+    - {nome: Beneficiários do subsídio de desemprego, fonte: Pordata, codigo: null,   unidade: "N.º", nota: "Origem Segurança Social"}
+    - {nome: Pensão média,                         fonte: Pordata, codigo: null,      unidade: "€",   nota: "Sem conector Pordata ainda"}
+    - {nome: Rendimento bruto médio familiar,      fonte: Pordata, codigo: null,      unidade: "€",   nota: "Sem conector Pordata ainda"}
+    - {nome: N.º de agregados,                     fonte: INE,     codigo: "0011494", unidade: "N.º"}
 
   Ambiente:
-    - {nome: Resíduos urbanos recolhidos,   fonte: INE, codigo: null, unidade: "t"}
-    - {nome: Água segura,                   fonte: INE, codigo: null, unidade: "%", nota: "Origem ERSAR"}
-    - {nome: Modo de transporte individual, fonte: INE, codigo: null, unidade: "%", nota: "Provavelmente só nos Censos (2011, 2021)"}
+    - {nome: Resíduos urbanos recolhidos,   fonte: INE, codigo: "0008775", unidade: "t"}
+    - {nome: Água segura,                   fonte: INE, codigo: null,      unidade: "%", nota: "Origem ERSAR"}
+    - {nome: Modo de transporte individual, fonte: INE, codigo: null,      unidade: "%", nota: "Provavelmente Censos"}
 
   Habitação:
-    - {nome: Fogos concluídos,                                    fonte: INE, codigo: null, unidade: "N.º"}
-    - {nome: Valor mediano de vendas por m²,                      fonte: INE, codigo: null, unidade: "€/m²", nota: "Pode não existir para Tondela"}
-    - {nome: Valor mediano de avaliação bancária por m²,          fonte: INE, codigo: null, unidade: "€/m²", nota: "Pode não existir para Tondela"}
-    - {nome: Novos contratos de arrendamento,                     fonte: INE, codigo: null, unidade: "N.º",  nota: "Pode não existir para Tondela"}
+    - {nome: Fogos concluídos,                             fonte: INE, codigo: "0002161", unidade: "N.º"}
+    - {nome: Valor mediano de vendas por m²,               fonte: INE, codigo: "0010629", unidade: "€/m²"}
+    - {nome: Valor mediano de avaliação bancária por m²,   fonte: INE, codigo: "0010950", unidade: "€/m²"}
+    - {nome: Novos contratos de arrendamento,              fonte: INE, codigo: "0011044", unidade: "N.º"}
