@@ -5,8 +5,8 @@ Recolha, validação e armazenamento de indicadores socioeconómicos de Tondela.
 Fluxo:  indicadores.yaml -> API JSON do INE -> validação/variação anual -> Supabase (upsert)
 
 Utilização:
-    python main.py                          # corre tudo e grava no Supabase
-    python main.py --dry-run                # faz tudo menos gravar (não precisa de credenciais)
+    python main.py                        # corre tudo e grava no Supabase
+    python main.py --dry-run              # faz tudo menos gravar (não precisa de credenciais)
     python main.py --categoria Turismo      # só uma categoria
     python main.py --inspecionar 0008273    # mostra o que o INE devolve para um varcd
     python main.py --descobrir "dormidas"   # pesquisa indicadores no catálogo do INE
@@ -189,7 +189,7 @@ def parse_valor(bruto: object) -> float | None:
     s = str(bruto).replace("\u00a0", "").replace(" ", "").strip()
     if s.lower() in _NULOS:
         return None
-    if "," in s and "." in s:          # 1.234,56
+    if "," in s and "." in s:        # 1.234,56
         s = s.replace(".", "").replace(",", ".")
     elif "," in s:                     # 1234,56
         s = s.replace(",", ".")
@@ -344,8 +344,6 @@ def extrair_ine(sessao: requests.Session, ind: Indicador, geo: Geografia) -> dic
 
 CONECTORES: dict[str, Callable[[requests.Session, Indicador, Geografia], dict[int, float]]] = {
     "INE": extrair_ine,
-    # "PORDATA": extrair_pordata,   # a implementar
-    # "BP": extrair_bp,             # a implementar
 }
 
 
