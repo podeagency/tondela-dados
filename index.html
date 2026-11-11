@@ -166,7 +166,9 @@ async function load() {
   $("#kpis").innerHTML = '<div class="sk"></div>'.repeat(4);
   try {
     if (!window.supabase) throw new Error("Biblioteca Supabase não carregada (verifique a ligação à Internet).");
-    db = db || window.supabase.createClient(CFG.url, CFG.key);
+   db = db || window.supabase.createClient(CFG.url, CFG.key, {
+  auth: { persistSession: false, autoRefreshToken: false }
+});
     let all = [], from = 0;
     for (;;) {
       const { data, error } = await db.from(CFG.table).select(COLS).order("ano").range(from, from + 999);
